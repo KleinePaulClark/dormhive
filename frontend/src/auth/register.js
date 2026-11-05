@@ -72,7 +72,12 @@ export async function renderRegister(root = document.querySelector('#app')) {
                 <input id="phone_r" name="phone" type="tel" inputmode="numeric" placeholder="9XX XXX XXXX" required maxlength="12" autocomplete="tel">
               </div>
             </div>
-            <div class="input-box"><select id="role" name="role" required><option value="tenant">I want to</option><option value="tenant">Find a rental</option><option value="owner">List a property</option></select></div>
+            <input id="role" name="role" type="hidden" value="tenant">
+            <fieldset class="role-choice-group">
+              <legend>I want to</legend>
+              <label class="role-choice"><input type="checkbox" data-role-choice="tenant" checked><span>Find a rental</span></label>
+              <label class="role-choice"><input type="checkbox" data-role-choice="owner"><span>List a property</span></label>
+            </fieldset>
             <div class="input-box"><input id="password_r" name="password" type="password" placeholder="Password" required minlength="8"><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false"><i class='bx bx-show' aria-hidden="true"></i></button></div>
             <div class="input-box"><input id="confirm_password" name="confirmPassword" type="password" placeholder="Confirm password" required minlength="8"><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false"><i class='bx bx-show' aria-hidden="true"></i></button></div>
             <div class="identity-upload">
@@ -120,6 +125,19 @@ export async function renderRegister(root = document.querySelector('#app')) {
   const submitButton = root.querySelector('.auth-submit');
   const phoneInput = root.querySelector('#phone_r');
   const identityDocumentInput = root.querySelector('#identity-document');
+  const roleInput = root.querySelector('#role');
+  root.querySelectorAll('[data-role-choice]').forEach((choice) => {
+    choice.addEventListener('change', () => {
+      if (!choice.checked) {
+        choice.checked = true;
+        return;
+      }
+      root.querySelectorAll('[data-role-choice]').forEach((otherChoice) => {
+        if (otherChoice !== choice) otherChoice.checked = false;
+      });
+      roleInput.value = choice.dataset.roleChoice;
+    });
+  });
   root.querySelectorAll('.checkbox-label a[href="#/terms"], .checkbox-label a[href="#/privacy"]').forEach((link) => {
     link.addEventListener('click', (event) => {
       event.preventDefault();

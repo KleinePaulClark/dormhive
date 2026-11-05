@@ -1578,3 +1578,91 @@ form {
     display: none;
   }
 }
+
+.container .input-box input:not([type="checkbox"]),
+.container .input-box select,
+.container .phone-input-box,
+.container .identity-upload input[type="file"] {
+  border: 1px solid #aeb5b2;
+  border-radius: 10px;
+  background-color: #fff;
+  color: #111;
+  box-shadow: none;
+}
+
+.container .input-box input:not([type="checkbox"])::placeholder {
+  color: #555;
+}
+
+.container .phone-input-box input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.container .phone-country {
+  border-right-color: #c4cbc7;
+  color: #111;
+}
+
+.container .input-box input:focus-visible,
+.container .input-box select:focus-visible,
+.container .phone-input-box:focus-within,
+.container .identity-upload input[type="file"]:focus-visible,
+.container .role-choice:focus-within {
+  outline: 2px solid #87938d;
+  outline-offset: 2px;
+  border-color: #87938d;
+  box-shadow: none;
+}
+
+.container .input-box .password-toggle {
+  color: #111;
+}
+
+.container .identity-upload input[type="file"]::file-selector-button {
+  border: 1px solid #aeb5b2;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+}
+
+.role-choice-group {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.role-choice-group legend {
+  padding: 0 5px;
+  color: #111;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.role-choice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 24px;
+  color: #111;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.role-choice input,
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #111;
+}
+
+.container .checkbox-label {
+  color: #111;
+}
