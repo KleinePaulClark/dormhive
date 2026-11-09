@@ -2007,6 +2007,110 @@ body {
   background: #107e65;
 }
 
+.rental-space-manager { z-index: 25; }
+
+.rental-space-manager .property-details-card {
+  width: min(820px, 100%);
+}
+
+.rental-space-manager .property-details-header > div { min-width: 0; }
+
+.rental-space-manager .property-details-header p {
+  margin: 4px 0 0;
+  color: #647a71;
+  font-size: .82rem;
+}
+
+.rental-space-manager-content {
+  overflow: auto;
+  padding: 18px 24px 24px;
+}
+
+.rental-space-manager-status {
+  min-height: 1.4em;
+  margin: 0 0 12px;
+  color: #526a61;
+  font-size: .85rem;
+}
+
+.rental-space-manager-list {
+  display: grid;
+  gap: 10px;
+}
+
+.rental-space-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 15px;
+  border: 1px solid #e1ebe7;
+  border-radius: 10px;
+  background: #fbfdfc;
+}
+
+.rental-space-manager-item > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rental-space-manager-item strong { color: #21483f; }
+.rental-space-manager-item span,
+.rental-space-manager-item small { color: #5c7269; font-size: .8rem; }
+
+.rental-space-manager-item-actions,
+.rental-space-manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rental-space-manager-form {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e3ece8;
+}
+
+.rental-space-manager-form h3 {
+  margin: 0 0 12px;
+  color: #21483f;
+  font-size: 1rem;
+}
+
+.rental-space-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rental-space-form-grid label {
+  display: grid;
+  gap: 6px;
+  color: #36584e;
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.rental-space-form-grid input,
+.rental-space-form-grid select,
+.rental-space-form-grid textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d5e2dc;
+  border-radius: 7px;
+  background: #fff;
+  color: #243f37;
+  font: inherit;
+}
+
+.rental-space-form-grid textarea { resize: vertical; }
+.rental-space-form-wide { grid-column: 1 / -1; }
+.rental-space-manager-enabled { display: flex !important; align-items: center; }
+.rental-space-manager-enabled input { width: auto; min-height: auto; }
+.rental-space-manager-actions { justify-content: flex-end; margin-top: 14px; }
+
 @media (max-width: 760px) {
   .property-details-card {
     width: min(700px, 100%);
@@ -2022,6 +2126,8 @@ body {
   .property-details-gallery-stage {
     max-height: 330px;
   }
+
+  .rental-space-manager-item { align-items: flex-start; }
 }
 
 @media (max-width: 520px) {
@@ -2038,6 +2144,10 @@ body {
   .property-details-facts { grid-template-columns: minmax(0, 1fr); gap: 13px; }
   .details-amenities { grid-column: auto; }
   .property-details-actions { padding: 11px 14px; }
+  .rental-space-manager-content { padding: 14px; }
+  .rental-space-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .rental-space-form-wide { grid-column: auto; }
+  .rental-space-manager-item { flex-direction: column; }
 }
 
 /* Responsive Design */
@@ -2526,4 +2636,3 @@ body {
     display: none !important;
   }
 }
-

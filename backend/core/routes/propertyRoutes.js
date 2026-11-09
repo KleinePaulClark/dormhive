@@ -4,13 +4,20 @@ import { authenticate, optionalAuthenticate } from '../middleware/authenticate.j
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import { upload, uploadProperty } from '../config/upload.js';
+import * as rentalSpaceController from '../controllers/rentalSpaceController.js';
 
 const router = Router();
 router.post('/uploads', authenticate, authorize('owner', 'admin'), upload.single('image'), controller.uploadImage);
+router.get('/categories', rentalSpaceController.listCategories);
+router.post('/categories', authenticate, authorize('admin'), rentalSpaceController.createCategory);
 router.get('/', optionalAuthenticate, controller.list);
+router.get('/:id/spaces', optionalAuthenticate, rentalSpaceController.list);
+router.post('/:id/spaces', authenticate, authorize('owner', 'admin'), rentalSpaceController.create);
+router.put('/:id/spaces/:spaceId', authenticate, authorize('owner', 'admin'), rentalSpaceController.update);
+router.delete('/:id/spaces/:spaceId', authenticate, authorize('owner', 'admin'), rentalSpaceController.remove);
 router.get('/:id', optionalAuthenticate, controller.get);
 const propertyUpload = uploadProperty.fields([{ name: 'images' }, { name: 'image' }, { name: 'ownershipProof' }]);
-router.post('/', authenticate, authorize('owner', 'admin'), propertyUpload, validate(['title', 'address', 'municipality', 'roomType', 'monthlyRent', 'totalSlots']), controller.create);
+router.post('/', authenticate, authorize('owner', 'admin'), propertyUpload, validate(['title', 'address', 'municipality', 'roomType', 'monthlyRent']), controller.create);
 router.get('/:id/ownership-document', authenticate, authorize('admin'), controller.ownershipDocument);
 router.post('/:id/images', authenticate, authorize('owner', 'admin'), upload.single('image'), controller.addImage);
 router.patch('/:id/status', authenticate, authorize('admin'), controller.changeStatus);

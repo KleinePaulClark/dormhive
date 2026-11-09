@@ -142,7 +142,7 @@ export async function ownershipDocument(request, response, next) {
 
 export async function create(request, response, next) {
   try {
-    const totalSlots = Number(request.body.totalSlots);
+    const totalSlots = request.body.rentalArrangement === 'exclusive' ? 1 : Number(request.body.totalSlots);
     if (!Number.isInteger(totalSlots) || totalSlots < 1) {
       return response.status(422).json({ message: 'Total rental slots must be a whole number greater than zero.' });
     }
@@ -173,7 +173,15 @@ export async function create(request, response, next) {
       ownershipDocumentId: null,
       imageUrl: imageReferences[0] ?? (fileMetadata.length ? null : request.body.imageUrl ?? null),
       images: imageReferences,
-      genderPreference: request.body.genderPreference ?? request.body.gender_preference ?? null,
+      genderPreference: request.body.genderPreference !== undefined || request.body.gender_preference !== undefined
+        ? request.body.genderPreference || request.body.gender_preference || null
+        : undefined,
+      securityDeposit: request.body.securityDeposit !== undefined
+        ? request.body.securityDeposit || null
+        : undefined,
+      advancePaymentMonths: request.body.advancePaymentMonths !== undefined
+        ? request.body.advancePaymentMonths === '' ? null : request.body.advancePaymentMonths
+        : undefined,
       amenities
     };
     let property;
@@ -212,6 +220,9 @@ export async function create(request, response, next) {
 
 export async function update(request, response, next) {
   try {
+    if (request.body.rentalArrangement === 'exclusive' && request.body.totalSlots === undefined) {
+      request.body.totalSlots = 1;
+    }
     if (request.body.totalSlots !== undefined) {
       const totalSlots = Number(request.body.totalSlots);
       if (!Number.isInteger(totalSlots) || totalSlots < 1) {
@@ -285,7 +296,15 @@ export async function update(request, response, next) {
       images: undefined,
       ownershipDocumentId: undefined,
       status: isOwnerEdit && !requestedStatus ? 'pending' : request.body.status ?? null,
-      genderPreference: request.body.genderPreference ?? request.body.gender_preference ?? null,
+      genderPreference: request.body.genderPreference !== undefined || request.body.gender_preference !== undefined
+        ? request.body.genderPreference || request.body.gender_preference || null
+        : undefined,
+      securityDeposit: request.body.securityDeposit !== undefined
+        ? request.body.securityDeposit || null
+        : undefined,
+      advancePaymentMonths: request.body.advancePaymentMonths !== undefined
+        ? request.body.advancePaymentMonths === '' ? null : request.body.advancePaymentMonths
+        : undefined,
       amenities
     };
 

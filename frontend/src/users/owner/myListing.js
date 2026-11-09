@@ -226,7 +226,7 @@ function showPropertyPhotoViewer(property) {
 
 function css() {
   const stylesheet = new URL('./style/myListing.css', import.meta.url);
-  stylesheet.searchParams.set('v', 'portfolio-search-focus-neutral-1');
+  stylesheet.searchParams.set('v', 'rental-space-management-foundation-1');
   return loadOwnerStylesheet('listings', stylesheet);
 }
 
@@ -257,10 +257,22 @@ export async function renderMyListing(root = document.querySelector('#app')) {
               </label>
               <label class="property-filter">
                 <select>
-                  <option value="">All Property Type</option>
+                  <option value="">All property categories</option>
                   <option value="bedspace">Bedspace</option>
-                  <option value="private_room">Solo Room</option>
-                  <option value="entire_unit">Studio Unit</option>
+                  <option value="dormitory">Dormitory</option>
+                  <option value="boarding_house">Boarding House</option>
+                  <option value="room_for_rent">Room for Rent</option>
+                  <option value="shared_apartment">Shared Apartment</option>
+                  <option value="studio_unit">Studio Unit</option>
+                  <option value="condominium">Condominium</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="townhouse">Townhouse</option>
+                  <option value="house">House</option>
+                  <option value="duplex">Duplex</option>
+                  <option value="loft">Loft</option>
+                  <option value="penthouse">Penthouse</option>
+                  <option value="staff_house">Staff House</option>
+                  <option value="other">Other</option>
                 </select>
               </label>
               <button type="button" class="add-property">Add a New Property</button>
@@ -314,16 +326,53 @@ export async function renderMyListing(root = document.querySelector('#app')) {
                     </div>
                     <div class="form-grid">
                       <label class="full-span">Property title<input name="title" required maxlength="160"></label>
-                      <label>Property type<select name="roomType" required>
+                      <label>Property category<select name="propertyCategory" required>
+                        <option value="">Select category</option>
+                        <option value="bedspace">Bedspace</option>
+                        <option value="dormitory">Dormitory</option>
+                        <option value="boarding_house">Boarding House</option>
+                        <option value="room_for_rent">Room for Rent</option>
+                        <option value="shared_apartment">Shared Apartment</option>
+                        <option value="studio_unit">Studio Unit</option>
+                        <option value="condominium">Condominium</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="townhouse">Townhouse</option>
+                        <option value="house">House</option>
+                        <option value="duplex">Duplex</option>
+                        <option value="loft">Loft</option>
+                        <option value="penthouse">Penthouse</option>
+                        <option value="staff_house">Staff House</option>
+                        <option value="other">Other</option>
+                      </select></label>
+                      <label>Primary space type<select name="roomType" required>
                         <option value="">Select type</option>
                         <option value="bedspace">Bedspace</option>
                         <option value="private_room">Solo Room</option>
                         <option value="entire_unit">Studio Unit</option>
                         <option value="other">Other</option>
-                      </select><input name="customRoomType" type="text" maxlength="100" placeholder="Type your property type" aria-label="Custom property type" hidden></label>
+                      </select><input name="customRoomType" type="text" maxlength="100" placeholder="Type your space type" aria-label="Custom space type" hidden></label>
+                      <label>Rental arrangement<select name="rentalArrangement" required>
+                        <option value="">Select occupancy arrangement</option>
+                        <option value="exclusive">Exclusive — one tenant or household rents the whole space</option>
+                        <option value="shared">Shared — rent individual slots within this space</option>
+                      </select></label>
                       <label>Monthly price (₱)<input name="monthlyRent" type="text" inputmode="decimal" autocomplete="off" required></label>
-                      <label>Total rental slots<input name="totalSlots" type="number" min="1" value="1" required></label>
-                      <label>Gender preference<select name="genderPreference" required>
+                      <label>Rent charged<select name="rentBasis" required>
+                        <option value="">Select rent basis</option>
+                        <option value="per_space">For the whole space</option>
+                        <option value="per_slot">Per occupant or slot</option>
+                      </select></label>
+                      <label>Maximum occupants<input name="maxOccupants" type="number" min="1" value="1" required></label>
+                      <label>Maximum rentable slots<input name="totalSlots" type="number" min="1" value="1" required></label>
+                      <label>Security deposit (₱)<input name="securityDeposit" type="number" min="0" step="0.01"></label>
+                      <label>Advance payment (months)<input name="advancePaymentMonths" type="number" min="0" max="12" step="1"></label>
+                      <label>Furnishing<select name="furnishingStatus" required>
+                        <option value="unspecified">Not specified</option>
+                        <option value="furnished">Furnished</option>
+                        <option value="partially_furnished">Partially furnished</option>
+                        <option value="unfurnished">Unfurnished</option>
+                      </select></label>
+                      <label>Gender preference (for shared spaces)<select name="genderPreference">
                         <option value="">Select preference</option>
                         <option value="co-ed">Co-Ed</option>
                         <option value="male">Male Only</option>
@@ -360,7 +409,7 @@ export async function renderMyListing(root = document.querySelector('#app')) {
                   <div id="property-form-step-3" class="property-form-step" hidden>
                     <div class="form-step-title">
                       <h3>Amenities &amp; Media</h3>
-                      <p>Add photos and describe your property</p>
+                      <p>Add property photos, describe the property, and provide house rules</p>
                     </div>
                     <div class="amenities-section">
                       <label class="section-label">Select available amenities</label>
@@ -395,7 +444,8 @@ export async function renderMyListing(root = document.querySelector('#app')) {
                     </div>
                     <div class="media-file-list" aria-live="polite"></div>
                     <div class="form-grid">
-                      <label class="full-span">Description (optional)<textarea name="description" rows="4" placeholder="Describe your property, house rules, and what makes it special..."></textarea></label>
+                      <label class="full-span">Description (optional)<textarea name="description" rows="4" placeholder="Describe the property and what makes it special..."></textarea></label>
+                      <label class="full-span">House rules (optional)<textarea name="houseRules" rows="3" placeholder="Add rules that apply to everyone at this property..."></textarea></label>
                     </div>
                     <div class="modal-actions">
                       <button type="button" class="btn-secondary step-back" data-back-step="2">Back</button>
@@ -529,7 +579,19 @@ export async function renderMyListing(root = document.querySelector('#app')) {
   const monthlyRentInput = propertyForm.elements.monthlyRent;
   const roomTypeSelect = propertyForm.elements.roomType;
   const customRoomTypeInput = propertyForm.elements.customRoomType;
+  const rentalArrangementSelect = propertyForm.elements.rentalArrangement;
+  const rentBasisSelect = propertyForm.elements.rentBasis;
+  const rentalSlotsInput = propertyForm.elements.totalSlots;
   const ownershipProofInput = propertyForm.elements.ownershipProof;
+  const syncRentalArrangement = () => {
+    const isShared = rentalArrangementSelect.value === 'shared';
+    rentalSlotsInput.disabled = !isShared;
+    rentalSlotsInput.required = isShared;
+    if (!isShared) rentalSlotsInput.value = '1';
+    if (rentalArrangementSelect.value === 'exclusive') rentBasisSelect.value = 'per_space';
+    if (rentalArrangementSelect.value === 'shared' && !rentBasisSelect.value) rentBasisSelect.value = 'per_slot';
+  };
+  rentalArrangementSelect.addEventListener('change', syncRentalArrangement);
   const isOwnershipProofRequired = () => {
     if (!propertyForm.dataset.editingPropertyId || propertyForm.dataset.hasOwnershipProof !== 'true') return true;
     return [
@@ -691,34 +753,54 @@ export async function renderMyListing(root = document.querySelector('#app')) {
   const validateStep = (step) => {
     if (step === 1) {
       const title = propertyForm.elements.title.value.trim();
+      const propertyCategory = propertyForm.elements.propertyCategory.value;
       const roomType = propertyForm.elements.roomType.value;
+      const rentalArrangement = rentalArrangementSelect.value;
       const monthlyRent = Number(propertyForm.elements.monthlyRent.value.replace(/,/g, ''));
       const totalSlots = propertyForm.elements.totalSlots.value;
+      const maxOccupants = Number(propertyForm.elements.maxOccupants.value);
+      const rentBasis = rentBasisSelect.value;
       const genderPreference = propertyForm.elements.genderPreference.value;
       
       if (!title) {
         setFormMessage('Please enter a property title.');
         return false;
       }
+      if (!propertyCategory) {
+        setFormMessage('Please select a property category.');
+        return false;
+      }
       if (!roomType) {
-        setFormMessage('Please select a property type.');
+        setFormMessage('Please select the primary rentable space type.');
         return false;
       }
       if (roomType === 'other' && !customRoomTypeInput.value.trim()) {
-        setFormMessage('Please enter your property type.');
+        setFormMessage('Please enter your space type.');
         customRoomTypeInput.focus();
+        return false;
+      }
+      if (!['exclusive', 'shared'].includes(rentalArrangement)) {
+        setFormMessage('Please specify whether this space is rented exclusively or shared.');
         return false;
       }
       if (!Number.isFinite(monthlyRent) || monthlyRent < 1) {
         setFormMessage('Please enter a valid monthly price.');
         return false;
       }
-      if (!totalSlots || !Number.isInteger(Number(totalSlots)) || Number(totalSlots) < 1) {
+      if (rentalArrangement === 'shared' && (!totalSlots || !Number.isInteger(Number(totalSlots)) || Number(totalSlots) < 1)) {
         setFormMessage('Please enter a valid number of rental slots.');
         return false;
       }
-      if (!genderPreference) {
-        setFormMessage('Please select a gender preference.');
+      if (!Number.isInteger(maxOccupants) || maxOccupants < 1) {
+        setFormMessage('Please enter a valid maximum occupant count.');
+        return false;
+      }
+      if (!rentBasis || (rentalArrangement === 'exclusive' && rentBasis !== 'per_space')) {
+        setFormMessage('Choose how rent is charged. Exclusive spaces are charged per space.');
+        return false;
+      }
+      if (rentalArrangement === 'shared' && !genderPreference) {
+        setFormMessage('Please select a gender preference for this shared space.');
         return false;
       }
       return true;
@@ -764,18 +846,23 @@ export async function renderMyListing(root = document.querySelector('#app')) {
     const roomType = roomTypeSelect.value === 'other'
       ? customRoomTypeInput.value.trim()
       : normalizePropertyTypeLabel(roomTypeSelect.value);
+    const propertyCategory = propertyForm.elements.propertyCategory.selectedOptions[0]?.textContent || 'Not specified';
     const amenities = Array.from(propertyForm.querySelectorAll('input[name="amenities"]:checked'))
       .map((checkbox) => formatAmenityLabel(checkbox.value));
     const photos = selectedPhotos.map((photo) => photo.previewUrl).filter(Boolean);
     const values = [
-      ['Property type', roomType],
-      ['Monthly price', `PHP ${propertyForm.elements.monthlyRent.value || '0'} / month`],
-      ['Total rental slots', propertyForm.elements.totalSlots.value],
+      ['Property category', propertyCategory],
+      ['Primary space type', roomType],
+      ['Rental arrangement', rentalArrangementSelect.selectedOptions[0]?.textContent || 'Not specified'],
+      ['Monthly price', `PHP ${propertyForm.elements.monthlyRent.value || '0'} ${rentBasisSelect.value === 'per_slot' ? 'per slot / month' : '/ month'}`],
+      ['Maximum occupants', propertyForm.elements.maxOccupants.value],
+      ['Maximum rentable slots', rentalArrangementSelect.value === 'shared' ? propertyForm.elements.totalSlots.value : '1 (exclusive space)'],
       ['Gender preference', propertyForm.elements.genderPreference.selectedOptions[0]?.textContent || 'Not specified'],
       ['Location', [propertyForm.elements.address.value, propertyForm.elements.barangay.value, propertyForm.elements.municipality.value].filter(Boolean).join(', ')],
       ['Ownership proof', ownershipProofInput.files[0]?.name || (propertyForm.dataset.hasOwnershipProof === 'true' ? 'Existing proof on file (private)' : 'Missing')],
       ['Amenities', amenities.join(', ') || 'None selected'],
-      ['Description', propertyForm.elements.description.value.trim() || 'No description provided']
+      ['Description', propertyForm.elements.description.value.trim() || 'No description provided'],
+      ['House rules', propertyForm.elements.houseRules.value.trim() || 'No additional rules']
     ];
 
     listingReviewSummary.innerHTML = `
@@ -789,6 +876,7 @@ export async function renderMyListing(root = document.querySelector('#app')) {
   const closeModal = () => {
     propertyModal.hidden = true;
     propertyForm.reset();
+    syncRentalArrangement();
     propertyForm.elements.address.value = '';
     propertyForm.elements.municipality.value = '';
     propertyForm.elements.barangay.value = '';
@@ -1203,23 +1291,25 @@ export async function renderMyListing(root = document.querySelector('#app')) {
 
   const getFilteredPropertyRows = () => {
     const searchValue = (propertySearchInput?.value ?? '').trim().toLowerCase();
-    const selectedType = normalizePropertyTypeValue(propertyTypeFilter?.value ?? '');
+    const selectedCategory = String(propertyTypeFilter?.value ?? '').trim().toLowerCase();
 
     return allPropertyRows.filter((item) => {
       const isArchived = item.status === 'archived';
-      const propertyType = normalizePropertyTypeValue(item.room_type || item.property_type || '');
+      const propertyCategory = String(item.property_category || 'other').trim().toLowerCase();
       const searchableText = [
         item.title,
         item.address,
         item.municipality,
         item.barangay,
+        item.property_category_name,
+        item.space_name,
         item.room_type,
         item.property_type,
-        propertyType
+        propertyCategory
       ].join(' ').toLowerCase();
 
       const matchesSearch = !searchValue || searchableText.includes(searchValue);
-      const matchesType = !selectedType || propertyType === selectedType;
+      const matchesType = !selectedCategory || propertyCategory === selectedCategory;
       const matchesStatus = propertyStatus === 'archived' ? isArchived : !isArchived;
       return matchesSearch && matchesType && matchesStatus;
     });
@@ -1524,6 +1614,7 @@ export async function renderMyListing(root = document.querySelector('#app')) {
     // Populate the form with existing property data
     const form = propertyForm;
     form.elements.title.value = propertyData.title || '';
+    form.elements.propertyCategory.value = propertyData.property_category || 'other';
     const savedRoomType = String(propertyData.room_type || propertyData.property_type || '').trim();
     const normalizedRoomType = normalizePropertyTypeValue(savedRoomType);
     const standardRoomTypes = ['bedspace', 'private_room', 'entire_unit'];
@@ -1539,7 +1630,14 @@ export async function renderMyListing(root = document.querySelector('#app')) {
     }
     syncCustomRoomType();
     form.elements.monthlyRent.value = formatMonthlyRent(propertyData.monthly_rent || '');
-    form.elements.totalSlots.value = propertyData.total_slots || '1';
+    form.elements.rentalArrangement.value = propertyData.rental_arrangement || (normalizedRoomType === 'bedspace' ? 'shared' : 'exclusive');
+    form.elements.rentBasis.value = propertyData.rent_basis || (form.elements.rentalArrangement.value === 'shared' ? 'per_slot' : 'per_space');
+    form.elements.maxOccupants.value = propertyData.space_max_occupants || propertyData.max_occupants || '1';
+    form.elements.totalSlots.value = propertyData.space_capacity_slots || propertyData.total_slots || '1';
+    form.elements.securityDeposit.value = propertyData.security_deposit ?? '';
+    form.elements.advancePaymentMonths.value = propertyData.advance_payment_months ?? '';
+    form.elements.furnishingStatus.value = propertyData.furnishing_status || 'unspecified';
+    syncRentalArrangement();
     form.elements.genderPreference.value = propertyData.gender_preference || '';
     form.elements.address.value = propertyData.address || '';
     form.elements.municipality.value = propertyData.municipality || '';
@@ -1547,6 +1645,7 @@ export async function renderMyListing(root = document.querySelector('#app')) {
     form.elements.latitude.value = propertyData.latitude || '';
     form.elements.longitude.value = propertyData.longitude || '';
     form.elements.description.value = propertyData.description || '';
+    form.elements.houseRules.value = propertyData.house_rules || '';
     form.dataset.hasOwnershipProof = String(propertyData.has_ownership_proof === true || Number(propertyData.has_ownership_proof) === 1);
     form.dataset.originalAddress = propertyData.address || '';
     form.dataset.originalMunicipality = propertyData.municipality || '';
@@ -1571,6 +1670,202 @@ export async function renderMyListing(root = document.querySelector('#app')) {
     // Show modal and start from step 1
     propertyModal.hidden = false;
     showFormStep(1);
+  };
+
+  const showRentalSpaceManager = (propertyData) => {
+    const manager = document.createElement('div');
+    manager.className = 'property-details-modal rental-space-manager';
+    manager.innerHTML = `
+      <section class="property-details-card" role="dialog" aria-modal="true" aria-labelledby="rental-space-manager-title">
+        <header class="property-details-header">
+          <div><h2 id="rental-space-manager-title">Manage rental spaces</h2><p>${escape(propertyData.title || 'Property')}</p></div>
+          <button type="button" class="modal-close" aria-label="Close rental space manager">×</button>
+        </header>
+        <div class="rental-space-manager-content">
+          <p class="rental-space-manager-status" role="status" aria-live="polite"></p>
+          <div class="rental-space-manager-list" aria-label="Rental spaces"></div>
+          <form class="rental-space-manager-form">
+            <h3 data-space-form-heading>Add a rental space</h3>
+            <div class="rental-space-form-grid">
+              <label>Space name<input name="name" maxlength="160" required placeholder="e.g. Room 101"></label>
+              <label>Space type<input name="spaceType" maxlength="100" required placeholder="e.g. Bedspace"></label>
+              <label>Rental arrangement<select name="rentalArrangement" required>
+                <option value="exclusive">Exclusive</option><option value="shared">Shared</option>
+              </select></label>
+              <label>Rent basis<select name="rentBasis" required>
+                <option value="per_space">Per space</option><option value="per_slot">Per occupant or slot</option>
+              </select></label>
+              <label>Monthly rent (₱)<input name="monthlyRent" type="number" min="0.01" step="0.01" required></label>
+              <label>Maximum occupants<input name="maxOccupants" type="number" min="1" step="1" value="1" required></label>
+              <label>Maximum rentable slots<input name="capacitySlots" type="number" min="1" step="1" value="1" required></label>
+              <label>Security deposit (₱)<input name="securityDeposit" type="number" min="0" step="0.01"></label>
+              <label>Advance payment (months)<input name="advancePaymentMonths" type="number" min="0" max="12" step="1"></label>
+              <label>Furnishing<select name="furnishingStatus" required>
+                <option value="unspecified">Not specified</option><option value="furnished">Furnished</option>
+                <option value="partially_furnished">Partially furnished</option><option value="unfurnished">Unfurnished</option>
+              </select></label>
+              <label>Gender preference<select name="genderPreference">
+                <option value="">Not specified</option><option value="co-ed">Co-Ed</option>
+                <option value="male">Male only</option><option value="female">Female only</option>
+              </select></label>
+              <label>Available from<input name="availableFrom" type="date"></label>
+              <label class="rental-space-form-wide">Amenities (comma-separated)<input name="amenities" maxlength="500" placeholder="Wi-Fi, furnished, parking"></label>
+              <label class="rental-space-form-wide">Space description<textarea name="description" rows="2"></textarea></label>
+              <label class="rental-space-manager-enabled"><input name="isEnabled" type="checkbox" checked> Space is enabled for listing</label>
+            </div>
+            <div class="rental-space-manager-actions">
+              <button type="button" class="btn-secondary rental-space-form-cancel" hidden>Cancel edit</button>
+              <button type="submit" class="btn-primary">Add space</button>
+            </div>
+          </form>
+        </div>
+      </section>`;
+    document.body.append(manager);
+
+    const status = manager.querySelector('.rental-space-manager-status');
+    const list = manager.querySelector('.rental-space-manager-list');
+    const form = manager.querySelector('.rental-space-manager-form');
+    const arrangement = form.elements.rentalArrangement;
+    const slots = form.elements.capacitySlots;
+    const rentBasis = form.elements.rentBasis;
+    const submit = form.querySelector('button[type="submit"]');
+    const cancelEdit = manager.querySelector('.rental-space-form-cancel');
+    const syncSpaceArrangement = () => {
+      const shared = arrangement.value === 'shared';
+      slots.disabled = !shared;
+      slots.required = shared;
+      if (!shared) slots.value = '1';
+      rentBasis.value = shared ? 'per_slot' : 'per_space';
+    };
+    arrangement.addEventListener('change', syncSpaceArrangement);
+
+    const resetSpaceForm = () => {
+      form.reset();
+      form.dataset.editingSpaceId = '';
+      form.querySelector('[data-space-form-heading]').textContent = 'Add a rental space';
+      submit.textContent = 'Add space';
+      cancelEdit.hidden = true;
+      syncSpaceArrangement();
+    };
+    const loadSpaces = async () => {
+      status.textContent = 'Loading spaces...';
+      const response = await fetch(`${API}/properties/${encodeURIComponent(propertyData.id)}/spaces`, {
+        headers: authHeaders()
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || 'Unable to load rental spaces.');
+      const spaces = Array.isArray(body.data) ? body.data : [];
+      status.textContent = spaces.length
+        ? `${spaces.length} rental ${spaces.length === 1 ? 'space' : 'spaces'}`
+        : 'No rental spaces have been added.';
+      list.innerHTML = spaces.map((space) => `
+        <article class="rental-space-manager-item">
+          <div>
+            <strong>${escape(space.name)}</strong>
+            <span>${escape(space.space_type)} · ${space.rental_arrangement === 'shared' ? 'Shared' : 'Exclusive'} · PHP ${Number(space.monthly_rent).toLocaleString('en-PH')} ${space.rent_basis === 'per_slot' ? 'per slot' : 'per space'} / month</span>
+            <small>${Number(space.capacity_slots)} rentable slot${Number(space.capacity_slots) === 1 ? '' : 's'} · Up to ${Number(space.max_occupants)} occupant${Number(space.max_occupants) === 1 ? '' : 's'}${Number(space.is_enabled) ? '' : ' · Disabled'}${Number(space.is_default) ? ' · Primary space' : ''}</small>
+          </div>
+          <div class="rental-space-manager-item-actions">
+            <button type="button" class="btn-secondary" data-edit-space="${escape(space.id)}">Edit</button>
+            ${Number(space.is_default) ? '' : `<button type="button" class="btn-secondary" data-delete-space="${escape(space.id)}">Delete</button>`}
+          </div>
+        </article>`).join('');
+      list.querySelectorAll('[data-edit-space]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const space = spaces.find((item) => String(item.id) === button.dataset.editSpace);
+          if (!space) return;
+          form.elements.name.value = space.name || '';
+          form.elements.spaceType.value = space.space_type || '';
+          form.elements.rentalArrangement.value = space.rental_arrangement || 'exclusive';
+          form.elements.rentBasis.value = space.rent_basis || 'per_space';
+          form.elements.monthlyRent.value = space.monthly_rent ?? '';
+          form.elements.maxOccupants.value = space.max_occupants || 1;
+          form.elements.capacitySlots.value = space.capacity_slots || 1;
+          form.elements.securityDeposit.value = space.security_deposit ?? '';
+          form.elements.advancePaymentMonths.value = space.advance_payment_months ?? '';
+          form.elements.furnishingStatus.value = space.furnishing_status || 'unspecified';
+          form.elements.genderPreference.value = space.gender_preference || '';
+          form.elements.availableFrom.value = space.available_from ? String(space.available_from).slice(0, 10) : '';
+          form.elements.amenities.value = (Array.isArray(space.amenities)
+            ? space.amenities
+            : typeof space.amenities === 'string'
+              ? (() => { try { return JSON.parse(space.amenities); } catch { return []; } })()
+              : []).join(', ');
+          form.elements.description.value = space.description || '';
+          form.elements.isEnabled.checked = Boolean(Number(space.is_enabled));
+          form.dataset.editingSpaceId = space.id;
+          form.querySelector('[data-space-form-heading]').textContent = `Edit ${space.name}`;
+          submit.textContent = 'Save changes';
+          cancelEdit.hidden = false;
+          syncSpaceArrangement();
+          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+      list.querySelectorAll('[data-delete-space]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const space = spaces.find((item) => String(item.id) === button.dataset.deleteSpace);
+          if (!space || !window.confirm(`Delete "${space.name}"?`)) return;
+          try {
+            const response = await fetch(`${API}/properties/${encodeURIComponent(propertyData.id)}/spaces/${encodeURIComponent(space.id)}`, {
+              method: 'DELETE', headers: authHeaders()
+            });
+            const body = response.status === 204 ? {} : await response.json();
+            if (!response.ok) throw new Error(body.message || 'Unable to delete rental space.');
+            resetSpaceForm();
+            await loadSpaces();
+            status.textContent = 'Rental space deleted. The property is pending review.';
+          } catch (error) {
+            status.textContent = error.message;
+          }
+        });
+      });
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      const isEditing = Boolean(form.dataset.editingSpaceId);
+      const amenities = form.elements.amenities.value.split(',').map((item) => item.trim()).filter(Boolean);
+      const payload = {
+        name: form.elements.name.value.trim(),
+        spaceType: form.elements.spaceType.value.trim(),
+        description: form.elements.description.value.trim() || null,
+        rentalArrangement: arrangement.value,
+        rentBasis: rentBasis.value,
+        monthlyRent: Number(form.elements.monthlyRent.value),
+        maxOccupants: Number(form.elements.maxOccupants.value),
+        capacitySlots: arrangement.value === 'shared' ? Number(slots.value) : 1,
+        securityDeposit: form.elements.securityDeposit.value === '' ? null : Number(form.elements.securityDeposit.value),
+        advancePaymentMonths: form.elements.advancePaymentMonths.value === '' ? null : Number(form.elements.advancePaymentMonths.value),
+        furnishingStatus: form.elements.furnishingStatus.value,
+        genderPreference: form.elements.genderPreference.value || null,
+        availableFrom: form.elements.availableFrom.value || null,
+        amenities,
+        isEnabled: form.elements.isEnabled.checked
+      };
+      const spaceId = form.dataset.editingSpaceId;
+      try {
+        const response = await fetch(`${API}/properties/${encodeURIComponent(propertyData.id)}/spaces${isEditing ? `/${encodeURIComponent(spaceId)}` : ''}`, {
+          method: isEditing ? 'PUT' : 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = response.status === 204 ? {} : await response.json();
+        if (!response.ok) throw new Error(body.message || 'Unable to save rental space.');
+        resetSpaceForm();
+        await loadSpaces();
+        status.textContent = `Rental space ${isEditing ? 'updated' : 'added'}. The property is pending review.`;
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    cancelEdit.addEventListener('click', resetSpaceForm);
+    manager.querySelector('.modal-close').addEventListener('click', () => manager.remove());
+    manager.addEventListener('click', (event) => {
+      if (event.target === manager) manager.remove();
+    });
+    loadSpaces().catch((error) => { status.textContent = error.message; });
   };
 
   const showPropertyDetails = (propertyData) => {
@@ -1611,7 +1906,8 @@ export async function renderMyListing(root = document.querySelector('#app')) {
             </div>
             <div class="property-details-facts">
               <div class="details-section"><span class="details-label"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>Location</span><p>${escape([propertyData.address, propertyData.barangay, propertyData.municipality].filter(Boolean).join(', ') || 'No address')}</p></div>
-              <div class="details-section"><span class="details-label"><i class="bi bi-house-fill" aria-hidden="true"></i>Room Type</span><p>${escape(normalizePropertyTypeLabel(propertyData.room_type || propertyData.property_type || 'N/A')) || 'N/A'}</p></div>
+              <div class="details-section"><span class="details-label"><i class="bi bi-house-fill" aria-hidden="true"></i>Property category</span><p>${escape(propertyData.property_category_name || normalizePropertyTypeLabel(propertyData.room_type || propertyData.property_type || 'N/A')) || 'N/A'}</p></div>
+              <div class="details-section"><span class="details-label"><i class="bi bi-door-open-fill" aria-hidden="true"></i>Primary space</span><p>${escape(propertyData.space_name || propertyData.title || 'Rental space')} · ${escape(propertyData.rental_arrangement === 'shared' ? 'Shared' : 'Exclusive')}</p></div>
               <div class="details-section"><span class="details-label"><i class="bi bi-door-open-fill" aria-hidden="true"></i>Availability</span><p>${propertyData.total_slots != null ? (availableSlots > 0 ? `${availableSlots} slot${availableSlots === 1 ? '' : 's'} available` : 'No slots available') : 'N/A'}</p></div>
               <div class="details-section"><span class="details-label"><i class="bi bi-gender-ambiguous" aria-hidden="true"></i>Gender Preference</span><p>${escape(String(propertyData.gender_preference || 'Any').replaceAll('_', ' '))}</p></div>
               <div class="details-section"><span class="details-label"><i class="bi bi-person-fill" aria-hidden="true"></i>Owner</span><p>${escape(ownerName)}</p></div>
@@ -1621,9 +1917,11 @@ export async function renderMyListing(root = document.querySelector('#app')) {
               <span class="details-label"><i class="bi bi-card-text" aria-hidden="true"></i>Description</span>
               <p>${escape(propertyData.description || 'No description provided')}</p>
             </div>
+            ${propertyData.house_rules ? `<div class="details-section property-details-description"><span class="details-label"><i class="bi bi-list-check" aria-hidden="true"></i>House rules</span><p>${escape(propertyData.house_rules)}</p></div>` : ''}
           </div>
         </div>
         <div class="property-details-actions">
+          <button type="button" class="btn-primary manage-rental-spaces">Manage rental spaces</button>
           <button type="button" class="btn-secondary close-details">Close</button>
         </div>
       </div>
@@ -1634,6 +1932,7 @@ export async function renderMyListing(root = document.querySelector('#app')) {
     // Handle close button
     detailsModal.querySelector('.modal-close').addEventListener('click', () => detailsModal.remove());
     detailsModal.querySelector('.close-details').addEventListener('click', () => detailsModal.remove());
+    detailsModal.querySelector('.manage-rental-spaces').addEventListener('click', () => showRentalSpaceManager(propertyData));
 
     const mainImage = detailsModal.querySelector('.property-details-main-image');
     const counter = detailsModal.querySelector('.property-details-image-counter');
@@ -1663,6 +1962,24 @@ export async function renderMyListing(root = document.querySelector('#app')) {
 
   const load = async () => {
     try {
+      try {
+        const categoryResponse = await fetch(`${API}/properties/categories`);
+        const categoryBody = await categoryResponse.json();
+        if (!categoryResponse.ok) throw new Error(categoryBody.message ?? 'Unable to load property categories.');
+        const categorySelect = propertyForm.elements.propertyCategory;
+        const categoryFilter = propertyTypeFilter;
+        for (const category of categoryBody.data ?? []) {
+          if (!Array.from(categorySelect.options).some((option) => option.value === category.slug)) {
+            categorySelect.add(new Option(category.name, category.slug));
+          }
+          if (!Array.from(categoryFilter.options).some((option) => option.value === category.slug)) {
+            categoryFilter.add(new Option(category.name, category.slug));
+          }
+        }
+      } catch (error) {
+        setFormMessage(`Property categories could not be refreshed: ${error.message}`);
+      }
+
       let propertiesResponse;
       let bookingsResponse;
 

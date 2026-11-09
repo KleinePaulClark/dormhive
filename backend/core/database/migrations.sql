@@ -232,3 +232,188 @@ CREATE TABLE IF NOT EXISTS media_files (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE media_files ADD COLUMN IF NOT EXISTS is_private TINYINT(1) NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS property_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(80) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO property_categories (slug, name) VALUES
+  ('bedspace', 'Bedspace'),
+  ('dormitory', 'Dormitory'),
+  ('boarding_house', 'Boarding House'),
+  ('room_for_rent', 'Room for Rent'),
+  ('shared_apartment', 'Shared Apartment'),
+  ('studio_unit', 'Studio Unit'),
+  ('condominium', 'Condominium'),
+  ('apartment', 'Apartment'),
+  ('townhouse', 'Townhouse'),
+  ('house', 'House'),
+  ('duplex', 'Duplex'),
+  ('loft', 'Loft'),
+  ('penthouse', 'Penthouse'),
+  ('staff_house', 'Staff House'),
+  ('other', 'Other')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_category_id INT NULL;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS house_rules TEXT NULL;
+
+CREATE TABLE IF NOT EXISTS rental_spaces (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  property_id INT NOT NULL,
+  name VARCHAR(160) NOT NULL,
+  category VARCHAR(100) NULL,
+  occupancy_type ENUM('exclusive', 'shared') NOT NULL DEFAULT 'exclusive',
+  space_type VARCHAR(100) NOT NULL,
+  description TEXT NULL,
+  rental_arrangement ENUM('exclusive', 'shared') NOT NULL DEFAULT 'exclusive',
+  max_occupants INT NOT NULL DEFAULT 1,
+  capacity_slots INT NOT NULL DEFAULT 1,
+  total_slots INT NOT NULL DEFAULT 1,
+  monthly_rent DECIMAL(10, 2) NOT NULL,
+  rent_basis ENUM('per_space', 'per_slot') NOT NULL DEFAULT 'per_space',
+  security_deposit DECIMAL(10, 2) NULL,
+  advance_payment_months TINYINT UNSIGNED NULL,
+  furnishing_status ENUM('furnished', 'partially_furnished', 'unfurnished', 'unspecified') NOT NULL DEFAULT 'unspecified',
+  gender_preference ENUM('co-ed', 'male', 'female') NULL,
+  amenities JSON NULL,
+  availability_status ENUM('available', 'partially_occupied', 'fully_occupied', 'reserved', 'unavailable', 'coming_soon') NOT NULL DEFAULT 'available',
+  is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  is_default TINYINT(1) NOT NULL DEFAULT 0,
+  available_from DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+  INDEX idx_rental_spaces_property (property_id),
+  INDEX idx_rental_spaces_availability (availability_status),
+  INDEX idx_rental_spaces_arrangement (rental_arrangement)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS category VARCHAR(100) NULL AFTER name;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS occupancy_type ENUM('exclusive', 'shared') NOT NULL DEFAULT 'exclusive';
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS space_type VARCHAR(100) NULL AFTER name;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS description TEXT NULL AFTER space_type;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS rental_arrangement ENUM('exclusive', 'shared') NOT NULL DEFAULT 'exclusive';
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS capacity_slots INT NOT NULL DEFAULT 1;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS total_slots INT NOT NULL DEFAULT 1;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS rent_basis ENUM('per_space', 'per_slot') NOT NULL DEFAULT 'per_space';
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS security_deposit DECIMAL(10, 2) NULL;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS advance_payment_months TINYINT UNSIGNED NULL;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS furnishing_status ENUM('furnished', 'partially_furnished', 'unfurnished', 'unspecified') NOT NULL DEFAULT 'unspecified';
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS amenities JSON NULL;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS gender_preference ENUM('co-ed', 'male', 'female') NULL;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS is_enabled TINYINT(1) NOT NULL DEFAULT 1;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS is_default TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE rental_spaces ADD COLUMN IF NOT EXISTS available_from DATE NULL;
+ALTER TABLE rental_spaces MODIFY COLUMN category VARCHAR(100) NULL;
+ALTER TABLE rental_spaces MODIFY COLUMN availability_status ENUM('available', 'partially_occupied', 'fully_occupied', 'reserved', 'unavailable', 'coming_soon', 'occupied', 'maintenance') NOT NULL DEFAULT 'available';
+UPDATE rental_spaces SET
+  space_type = COALESCE(NULLIF(space_type, ''), NULLIF(category, ''), 'Rental space'),
+  rental_arrangement = COALESCE(occupancy_type, rental_arrangement, 'exclusive'),
+  capacity_slots = IF(
+    COALESCE(occupancy_type, rental_arrangement) = 'exclusive',
+    1,
+    GREATEST(1, COALESCE(total_slots, capacity_slots, 1))
+  ),
+  rent_basis = IF(COALESCE(occupancy_type, rental_arrangement) = 'shared', 'per_slot', 'per_space'),
+  availability_status = CASE availability_status
+    WHEN 'occupied' THEN 'fully_occupied'
+    WHEN 'maintenance' THEN 'unavailable'
+    ELSE availability_status
+  END;
+UPDATE rental_spaces SET category = space_type, occupancy_type = rental_arrangement, total_slots = capacity_slots;
+ALTER TABLE rental_spaces MODIFY COLUMN space_type VARCHAR(100) NOT NULL;
+ALTER TABLE rental_spaces MODIFY COLUMN availability_status ENUM('available', 'partially_occupied', 'fully_occupied', 'reserved', 'unavailable', 'coming_soon') NOT NULL DEFAULT 'available';
+UPDATE rental_spaces rs
+JOIN (
+  SELECT property_id, MIN(id) AS id
+  FROM rental_spaces
+  GROUP BY property_id
+  HAVING SUM(is_default) = 0
+) first_space ON first_space.id = rs.id
+SET rs.is_default = 1;
+
+CREATE TABLE IF NOT EXISTS rental_space_images (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  rental_space_id INT NOT NULL,
+  image_url VARCHAR(500) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (rental_space_id) REFERENCES rental_spaces(id) ON DELETE CASCADE,
+  INDEX idx_rental_space_images_space (rental_space_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+UPDATE properties p
+JOIN property_categories c ON c.slug = CASE
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('bedspace', 'bed_space') THEN 'bedspace'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('private_room', 'solo_room', 'private') THEN 'room_for_rent'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('entire_unit', 'studio_unit', 'studio') THEN 'studio_unit'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'dormitory' THEN 'dormitory'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'boarding_house' THEN 'boarding_house'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'shared_apartment' THEN 'shared_apartment'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'condominium' THEN 'condominium'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'apartment' THEN 'apartment'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'townhouse' THEN 'townhouse'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'house' THEN 'house'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'duplex' THEN 'duplex'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'loft' THEN 'loft'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'penthouse' THEN 'penthouse'
+  WHEN LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) = 'staff_house' THEN 'staff_house'
+  ELSE 'other'
+END
+SET p.property_category_id = c.id
+WHERE p.property_category_id IS NULL;
+
+INSERT INTO rental_spaces
+  (property_id, name, category, occupancy_type, space_type, description, rental_arrangement, max_occupants, capacity_slots, total_slots, monthly_rent, rent_basis, gender_preference, amenities, availability_status, is_default)
+SELECT p.id, p.title, p.room_type,
+  IF(LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('bedspace', 'bed_space'), 'shared', 'exclusive'),
+  p.room_type, p.description,
+  IF(LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('bedspace', 'bed_space'), 'shared', 'exclusive'),
+  GREATEST(1, COALESCE(p.max_occupants, 1)),
+  IF(LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('bedspace', 'bed_space'), GREATEST(1, COALESCE(p.total_slots, 1)), 1),
+  IF(LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('bedspace', 'bed_space'), GREATEST(1, COALESCE(p.total_slots, 1)), 1),
+  p.monthly_rent,
+  IF(LOWER(REPLACE(REPLACE(TRIM(p.room_type), ' ', '_'), '-', '_')) IN ('bedspace', 'bed_space'), 'per_slot', 'per_space'),
+  p.gender_preference, p.amenities,
+  IF(p.status = 'approved', 'available', 'unavailable'), 1
+FROM properties p
+LEFT JOIN rental_spaces rs ON rs.property_id = p.id AND rs.is_default = 1
+WHERE rs.id IS NULL;
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS rental_space_id INT NULL AFTER property_id;
+
+UPDATE bookings b
+JOIN rental_spaces rs ON rs.property_id = b.property_id AND rs.is_default = 1
+SET b.rental_space_id = rs.id
+WHERE b.rental_space_id IS NULL;
+
+SET @property_category_fk_exists = (
+  SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'properties' AND CONSTRAINT_NAME = 'fk_properties_category'
+);
+SET @property_category_fk_sql = IF(
+  @property_category_fk_exists = 0,
+  'ALTER TABLE properties ADD CONSTRAINT fk_properties_category FOREIGN KEY (property_category_id) REFERENCES property_categories(id)',
+  'SELECT 1'
+);
+PREPARE property_category_fk_stmt FROM @property_category_fk_sql;
+EXECUTE property_category_fk_stmt;
+DEALLOCATE PREPARE property_category_fk_stmt;
+
+SET @booking_space_fk_exists = (
+  SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bookings' AND CONSTRAINT_NAME = 'fk_bookings_rental_space'
+);
+SET @booking_space_fk_sql = IF(
+  @booking_space_fk_exists = 0,
+  'ALTER TABLE bookings ADD CONSTRAINT fk_bookings_rental_space FOREIGN KEY (rental_space_id) REFERENCES rental_spaces(id) ON DELETE SET NULL',
+  'SELECT 1'
+);
+PREPARE booking_space_fk_stmt FROM @booking_space_fk_sql;
+EXECUTE booking_space_fk_stmt;
+DEALLOCATE PREPARE booking_space_fk_stmt;
