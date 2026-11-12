@@ -14,6 +14,16 @@ const saveUser = (nextUser = {}) => {
   return mergedUser;
 };
 
+async function refreshOwnerUserFromServer(userId) {
+  if (!userId) return getUser();
+  const response = await fetch(`${API}/users/${encodeURIComponent(userId)}`, {
+    headers: { Authorization: `******'dormhive.accessToken') ?? ''}` }
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || !body.data) throw new Error(body.message || 'Unable to refresh your account verification status.');
+  return saveUser(body.data);
+}
+
 function resolveImageUrl(value = '') {
   const url = String(value || '').trim();
   if (!url) return '';
@@ -24,7 +34,7 @@ function resolveImageUrl(value = '') {
 
 function css() {
   const stylesheet = new URL('./style/setting.css', import.meta.url);
-  stylesheet.searchParams.set('v', 'mobile-header-inline-4');
+  stylesheet.searchParams.set('v', 'owner-id-verification-5');
   return loadOwnerStylesheet('setting', stylesheet);
 }
 
@@ -36,6 +46,12 @@ export async function renderSetting(root = document.querySelector('#app')) {
   if (!root) throw new Error('Owner settings page requires #app.');
   await Promise.all([css(), ensureOwnerSidebarStyles()]);
   let user = getUser();
+  let verificationRefreshError = '';
+  try {
+    user = await refreshOwnerUserFromServer(user.id);
+  } catch (error) {
+    verificationRefreshError = error.message || 'Unable to refresh your account verification status.';
+  }
   const displayName = (user.first_name || user.last_name) ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : user.name || 'Alexander J. Reyes';
   const displayEmail = user.email || 'mr.reyes@dormhive.com';
 
@@ -91,6 +107,19 @@ export async function renderSetting(root = document.querySelector('#app')) {
                     <input id="owner-profile-phone" name="phone" type="tel" maxlength="20" value="${user.phone ?? ''}" readonly>
                   </label>
                 </form>
+                <section class="verification-panel" aria-labelledby="owner-verification-title">
+                  <h2 id="owner-verification-title">Identity verification</h2>
+                  <p class="verification-status" role="status"></p>
+                  <form class="account-form verification-upload-form">
+                    <label>
+                      <span>Upload a government-issued or other valid ID</span>
+                      <input name="identityDocument" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" required>
+                    </label>
+                    <small>JPEG, PNG, WEBP, or PDF up to 5 MB. Only admins can view this document.</small>
+                    <button class="save-btn" type="submit">Submit ID for review</button>
+                  </form>
+                  <p class="notice verification-notice" hidden role="alert"></p>
+                </section>
               </div>
 
               <div class="settings-view security-view" hidden>
@@ -113,7 +142,7 @@ export async function renderSetting(root = document.querySelector('#app')) {
             </section>
           </div>
 
-          <p class="notice" role="alert" hidden></p>
+          <p class="notice settings-notice" role="alert" hidden></p>
         </div>
       </main>
     </div>`;
@@ -132,7 +161,11 @@ export async function renderSetting(root = document.querySelector('#app')) {
   const avatarEditButton = root.querySelector('.avatar-edit');
   const avatarImage = root.querySelector('.avatar-wrap img');
   const avatarInput = root.querySelector('.avatar-input');
-  const notice = root.querySelector('.notice');
+  const notice = root.querySelector('.settings-notice');
+  const verificationStatus = root.querySelector('.verification-status');
+  const verificationForm = root.querySelector('.verification-upload-form');
+  const verificationInput = verificationForm.elements.identityDocument;
+  const verificationNotice = root.querySelector('.verification-notice');
   let isEditMode = false;
   let profileSnapshot = {
     first_name: user.first_name ?? '',
@@ -147,6 +180,53 @@ export async function renderSetting(root = document.querySelector('#app')) {
   profileForm.querySelector('#owner-profile-last').value = user.last_name ?? (legacyParts.slice(1).join(' ') || legacyParts[legacyParts.length - 1] || '');
   profileForm.querySelector('#owner-profile-email').value = displayEmail;
   profileForm.querySelector('#owner-profile-phone').value = user.phone ?? '';
+
+  function renderVerificationStatus() {
+    const status = user.verification_status || 'approved';
+    const hasDocument = Boolean(user.has_verification_document);
+    verificationStatus.textContent = status === 'approved'
+      ? 'Your identity is verified. You can submit property listings with ownership proof for admin review.'
+      : status === 'rejected'
+        ? 'Your ID was rejected. Upload a new document to request another review.'
+        : hasDocument
+          ? 'Your ID is pending admin review. You can create listings after approval.'
+          : 'Verify your identity to create property listings.';
+    verificationForm.hidden = status === 'approved' || (status === 'pending' && hasDocument);
+    verificationInput.required = !verificationForm.hidden;
+  }
+
+  renderVerificationStatus();
+  if (verificationRefreshError) displayNotice(verificationNotice, verificationRefreshError);
+
+  verificationForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const file = verificationInput.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      displayNotice(verificationNotice, 'Choose an ID file that is no larger than 5 MB.');
+      return;
+    }
+    const submitButton = verificationForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    verificationNotice.hidden = true;
+    try {
+      const response = await fetch(`${API}/users/${encodeURIComponent(user.id)}/verification-document`, {
+        method: 'POST',
+        headers: { Authorization: `******'dormhive.accessToken') ?? ''}` },
+        body: new FormData(verificationForm)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Unable to submit your ID for review.');
+      user = saveUser(data.data);
+      verificationForm.reset();
+      renderVerificationStatus();
+      displayNotice(verificationNotice, data.message || 'Your ID was submitted for admin review.', 'success');
+    } catch (error) {
+      displayNotice(verificationNotice, error.message || 'Unable to submit your ID for review.');
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
 
   function displayNotice(element, text, state = 'error') {
     if (!element) return;

@@ -87,9 +87,12 @@ export async function renderUserManagement(root = document.querySelector('#app')
       if (result.documentDeleted && result.emailNotification?.sent) {
         showToast({ message: result.message, type: 'success' });
       } else if (decision === 'approved' && result.documentDeleted) {
-        await successDialog('The applicant can now sign in.', 'Account approved');
+        await successDialog(user.role === 'owner'
+          ? 'The owner is verified and can now submit listings with ownership proof.'
+          : 'The account is verified.',
+        'Account approved');
       } else if (decision === 'approved') {
-        await warningDialog('Account approved', 'The applicant can sign in, but the uploaded ID could not be deleted. Contact support to remove it.');
+        await warningDialog('Account approved', 'The account is verified, but the uploaded ID could not be deleted. Contact support to remove it.');
       } else {
         await warningDialog('Account rejected', result.message);
       }
@@ -164,9 +167,7 @@ export async function renderUserManagement(root = document.querySelector('#app')
       const counts = payload.counts ?? {};
       root.querySelectorAll('[data-verification-count]').forEach((count) => {
         const filter = count.dataset.verificationCount;
-        const value = filter === 'all'
-          ? Number(counts.pending ?? 0) + Number(counts.approved ?? 0) + Number(counts.rejected ?? 0)
-          : Number(counts[filter] ?? 0);
+        const value = Number(counts[filter] ?? 0);
         count.textContent = String(value);
       });
       if (roleSortDirection) {
@@ -193,12 +194,15 @@ export async function renderUserManagement(root = document.querySelector('#app')
         const isAdminUser = String(user.role).toLowerCase() === 'admin';
         const disableAction = isCurrentUser || isAdminUser;
         const canArchive = ['tenant', 'owner'].includes(String(user.role).toLowerCase()) && verification === 'approved';
-        const accountStatus = verification === 'pending' ? 'Pending review' : verification === 'rejected' ? 'Rejected' : active ? 'Active' : 'Suspended';
+        const hasVerificationDocument = Boolean(user.has_verification_document);
+        const accountStatus = verification === 'pending'
+          ? hasVerificationDocument ? 'Pending review' : 'ID not submitted'
+          : verification === 'rejected' ? 'Rejected' : active ? 'Active' : 'Suspended';
         const statusClass = verification === 'pending' ? 'pending' : verification === 'rejected' || !active ? 'suspended' : 'active';
         const accountActions = verification === 'approved'
           ? `<div class="user-actions"><button class="user-status-button" data-id="${esc(user.id)}" data-status="${active ? 'suspended' : 'active'}" ${disableAction ? 'disabled title="Admin accounts cannot be suspended from this panel."' : ''}>${disableAction ? 'Locked' : (active ? 'Suspend' : 'Activate')}</button>${canArchive ? `<button class="user-status-button user-archive-button" data-archive-id="${esc(user.id)}" ${disableAction ? 'disabled title="You cannot archive your own account."' : ''}>Archive</button>` : ''}</div>`
           : verification === 'pending'
-            ? `<div class="user-actions"><button class="verification-review-button" data-verification-review-id="${esc(user.id)}"><i class="bi bi-card-checklist" aria-hidden="true"></i>Review</button></div>`
+            ? hasVerificationDocument ? `<div class="user-actions"><button class="verification-review-button" data-verification-review-id="${esc(user.id)}"><i class="bi bi-card-checklist" aria-hidden="true"></i>Review</button></div>` : '—'
             : '—';
         return `<tr><td data-label="User"><div class="user-table-cell"><img class="user-row-avatar" src="${esc(avatar)}" alt="${esc(name)} avatar" onerror="this.onerror=null;this.src='${esc(fallbackAvatar)}'" /><div><strong data-privacy-mask="name">${esc(name)}</strong><small data-privacy-mask="email">${esc(user.email)}</small></div></div></td><td data-label="Role">${esc(user.role)}</td><td data-label="Status"><span class="pill ${statusClass}"><i aria-hidden="true"></i>${esc(accountStatus)}</span></td><td data-label="Action">${accountActions}</td></tr>`;
       }).join('') || '<tr><td colspan="4" class="empty-row">No users found.</td></tr>';

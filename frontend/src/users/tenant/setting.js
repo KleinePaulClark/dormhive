@@ -99,7 +99,9 @@ function displayNotice(element, text, state = 'error') {
 }
 
 function css() {
-  return loadTenantStylesheet('setting', new URL('./style/setting.css', import.meta.url));
+  const stylesheet = new URL('./style/setting.css', import.meta.url);
+  stylesheet.searchParams.set('v', 'tenant-id-verification-1');
+  return loadTenantStylesheet('setting', stylesheet);
 }
 
 function ensureSettingLayoutStyles() {
@@ -200,6 +202,19 @@ export async function renderSetting(root = document.querySelector('#app')) {
 
                   <p class="notice" data-notice="profile" hidden role="alert"></p>
                 </form>
+                <section class="verification-panel" aria-labelledby="tenant-verification-title">
+                  <h2 id="tenant-verification-title">Identity verification</h2>
+                  <p class="verification-status" role="status"></p>
+                  <form class="account-form verification-upload-form">
+                    <label>
+                      <span>Upload a government-issued or other valid ID</span>
+                      <input name="identityDocument" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" required>
+                    </label>
+                    <small>JPEG, PNG, WEBP, or PDF up to 5 MB. Only admins can view this document.</small>
+                    <button class="save-btn" type="submit">Submit ID for review</button>
+                  </form>
+                  <p class="notice" data-notice="verification" hidden role="alert"></p>
+                </section>
               </div>
 
               <div class="settings-view security-view" hidden>
@@ -242,6 +257,10 @@ export async function renderSetting(root = document.querySelector('#app')) {
   const discardProfileButton = root.querySelector('.discard-profile');
   const profileNotice = root.querySelector('[data-notice="profile"]');
   const securityNotice = root.querySelector('[data-notice="security"]');
+  const verificationStatus = root.querySelector('.verification-status');
+  const verificationForm = root.querySelector('.verification-upload-form');
+  const verificationInput = verificationForm.elements.identityDocument;
+  const verificationNotice = root.querySelector('[data-notice="verification"]');
   const avatarInput = root.querySelector('.avatar-input');
   const avatarEditButton = root.querySelector('.avatar-edit');
   const avatarImage = root.querySelector('.avatar-image');
@@ -267,6 +286,52 @@ export async function renderSetting(root = document.querySelector('#app')) {
   }
 
   syncAvatarDisplay(user.avatar_url || '');
+
+  function renderVerificationStatus() {
+    const status = user.verification_status || 'approved';
+    const hasDocument = Boolean(user.has_verification_document);
+    verificationStatus.textContent = status === 'approved'
+      ? 'Your identity is verified.'
+      : status === 'rejected'
+        ? 'Your ID was rejected. Upload a new document to request another review.'
+        : hasDocument
+          ? 'Your ID is pending admin review.'
+          : 'Verify your identity from your profile to help keep DormHive safe.';
+    verificationForm.hidden = status === 'approved' || (status === 'pending' && hasDocument);
+    verificationInput.required = !verificationForm.hidden;
+  }
+
+  renderVerificationStatus();
+
+  verificationForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const file = verificationInput.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      displayNotice(verificationNotice, 'Choose an ID file that is no larger than 5 MB.', 'error');
+      return;
+    }
+    const submitButton = verificationForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    verificationNotice.hidden = true;
+    try {
+      const response = await fetch(`${API}/users/${encodeURIComponent(user.id)}/verification-document`, {
+        method: 'POST',
+        headers: { Authorization: `******'dormhive.accessToken') ?? ''}` },
+        body: new FormData(verificationForm)
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Unable to submit your ID for review.');
+      user = saveUser(body.data);
+      verificationForm.reset();
+      renderVerificationStatus();
+      displayNotice(verificationNotice, body.message || 'Your ID was submitted for admin review.', 'success');
+    } catch (error) {
+      displayNotice(verificationNotice, error.message, 'error');
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
 
   const legacyParts = (user.name || '').trim().split(/\s+/).filter(Boolean);
   firstInput.value = user.first_name ?? (legacyParts[0] ?? '');

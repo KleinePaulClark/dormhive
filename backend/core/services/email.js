@@ -96,8 +96,8 @@ export async function sendVerificationDecisionEmail({ email, name, status }) {
   const approved = status === 'approved';
   const subject = approved ? 'Your DormHive account is approved' : 'An update about your DormHive account';
   const text = approved
-    ? `Hello ${normalizedName},\n\nYour DormHive account has been approved. You can now sign in using your registered email and password.\n\nThank you,\nDormHive`
-    : `Hello ${normalizedName},\n\nYour DormHive account verification was not approved. Please contact DormHive support if you believe this decision was made in error.\n\nThank you,\nDormHive`;
+    ? `Hello ${normalizedName},\n\nYour DormHive identity verification has been approved. Verified owners can now create listings and submit proof of ownership for admin review.\n\nThank you,\nDormHive`
+    : `Hello ${normalizedName},\n\nYour DormHive identity verification was not approved. Sign in and upload a new ID from the Profile tab to request another review. Please contact support if you believe this decision was made in error.\n\nThank you,\nDormHive`;
   return sendSmtpMessage({ to: email, subject, text });
 }
 

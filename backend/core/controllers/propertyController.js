@@ -1,6 +1,7 @@
 import * as notifications from '../models/Notification.js';
 import * as properties from '../models/Property.js';
 import * as mediaFiles from '../models/Media.js';
+import * as users from '../models/User.js';
 import { validateUpload } from '../utils/fileValidation.js';
 
 const parseImages = (value) => {
@@ -142,6 +143,15 @@ export async function ownershipDocument(request, response, next) {
 
 export async function create(request, response, next) {
   try {
+    if (request.user.role === 'owner') {
+      const owner = await users.findById(request.user.id);
+      if (!owner || owner.status !== 'active') {
+        return response.status(403).json({ message: 'Only active owner accounts can create listings.' });
+      }
+      if (owner.verification_status !== 'approved') {
+        return response.status(403).json({ message: 'Verify your account from the Profile tab before creating a listing.' });
+      }
+    }
     const totalSlots = request.body.rentalArrangement === 'exclusive' ? 1 : Number(request.body.totalSlots);
     if (!Number.isInteger(totalSlots) || totalSlots < 1) {
       return response.status(422).json({ message: 'Total rental slots must be a whole number greater than zero.' });

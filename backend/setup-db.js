@@ -217,6 +217,7 @@ async function checkAndFixDatabase() {
       await query("ALTER TABLE users MODIFY COLUMN status ENUM('active', 'suspended', 'pending', 'archived') DEFAULT 'active'");
       await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved'");
       await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_document_id INT NULL");
+      await query("UPDATE users SET status = 'active' WHERE status = 'suspended' AND verification_status = 'rejected'");
       await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_status ENUM('active', 'suspended', 'pending') NULL");
       await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_at DATETIME NULL");
       await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at DATETIME NULL");

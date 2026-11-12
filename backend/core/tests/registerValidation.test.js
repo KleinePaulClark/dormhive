@@ -73,17 +73,12 @@ test('archived login requires a valid password before returning the archive noti
   });
 });
 
-test('only approved active users continue through login', () => {
+test('unverified accounts can sign in to submit or correct their verification documents', () => {
   assert.equal(loginRejection({ status: 'active', verification_status: 'approved' }, true), null);
-  assert.deepEqual(loginRejection({ status: 'pending', verification_status: 'pending' }, true), {
-    status: 403,
-    message: 'Your account is awaiting admin verification. We will email you when it has been reviewed.'
-  });
-  assert.deepEqual(loginRejection({ status: 'suspended', verification_status: 'rejected' }, true), {
-    status: 403,
-    message: 'Your account verification was rejected. Please check your email for details or contact DormHive support.'
-  });
-  assert.deepEqual(loginRejection({ status: 'pending', verification_status: 'pending' }, false), {
+  assert.equal(loginRejection({ status: 'active', verification_status: 'pending' }, true), null);
+  assert.equal(loginRejection({ status: 'active', verification_status: 'rejected' }, true), null);
+  assert.equal(loginRejection({ status: 'pending', verification_status: 'pending' }, true), null);
+  assert.deepEqual(loginRejection({ status: 'active', verification_status: 'pending' }, false), {
     status: 401,
     message: 'Invalid email or password.'
   });

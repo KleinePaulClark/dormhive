@@ -261,6 +261,33 @@ input {
   cursor: not-allowed;
 }
 
+.verification-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #e6dcc2;
+  border-radius: 14px;
+  background: #faf8f3;
+}
+
+.verification-panel h2 {
+  margin: 0;
+  color: #1f2d2b;
+  font-size: 1rem;
+}
+
+.verification-status,
+.verification-panel small {
+  color: #52635c;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.verification-panel form[hidden] {
+  display: none;
+}
+
 .save-btn {
   margin-top: 0.25rem;
   justify-self: flex-start;

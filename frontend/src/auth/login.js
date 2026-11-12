@@ -97,13 +97,8 @@ export async function renderLogin(root = document.querySelector('#app')) {
             </fieldset>
             <div class="input-box"><input id="password_r" name="password" type="password" placeholder="Password" required minlength="8"><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false"><i class='bx bx-show' aria-hidden="true"></i></button></div>
             <div class="input-box"><input id="confirm_password" name="confirmPassword" type="password" placeholder="Confirm password" required minlength="8"><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false"><i class='bx bx-show' aria-hidden="true"></i></button></div>
-            <div class="identity-upload">
-              <label for="identity-document">Upload a valid ID <span aria-hidden="true">*</span></label>
-              <input id="identity-document" name="identityDocument" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" required>
-              <small>Government-issued or another valid ID, up to 5 MB. Only admins can view it for account verification.</small>
-            </div>
             <label class="checkbox-label"><input name="terms" type="checkbox" required> I agree to the <a href="#/terms">Terms and conditions</a>.</label>
-            <button class="btn auth-submit" type="submit">Submit for review</button>
+            <button class="btn auth-submit" type="submit">Create account</button>
           </div>
         </form>
       </div>
@@ -142,7 +137,6 @@ export async function renderLogin(root = document.querySelector('#app')) {
   const loginSubmitButton = root.querySelector('.form-box.login .auth-submit');
   const registerSubmitButton = root.querySelector('.form-box.register .auth-submit');
   const phoneInput = root.querySelector('#phone_r');
-  const identityDocumentInput = root.querySelector('#identity-document');
   const roleInput = root.querySelector('#role');
   root.querySelectorAll('[data-role-choice]').forEach((choice) => {
     choice.addEventListener('change', () => {
@@ -415,30 +409,25 @@ export async function renderLogin(root = document.querySelector('#app')) {
         phoneInput.focus();
         return;
       }
-      const identityDocument = identityDocumentInput.files[0];
-      if (!identityDocument || identityDocument.size > 5 * 1024 * 1024) {
-        showMessage(registerMessage, 'Choose an ID file that is no larger than 5 MB.');
-        identityDocumentInput.focus();
-        return;
-      }
-
       const { terms, confirmPassword: _confirmPassword, ...payload } = formData;
       payload.phone = toServerPhoneValue(payload.phone);
-      const requestData = new FormData();
-      Object.entries(payload).forEach(([key, value]) => requestData.append(key, value));
       registerSubmitButton.disabled = true;
-      registerSubmitButton.textContent = 'Submitting…';
+      registerSubmitButton.textContent = 'Creating account…';
       if (registerMessage) registerMessage.hidden = true;
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, { method: 'POST', body: requestData });
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
         const body = await readApiResponse(response);
         if (!response.ok) throw new Error(getApiErrorMessage(body, 'Unable to create your account.'));
-        showToast({ message: 'Application submitted. Check your email after admin review.', type: 'success' });
+        showToast({ message: 'Account created. Sign in, then submit your ID from the Profile tab.', type: 'success' });
         navigate('/login', true);
       } catch (error) {
         showMessage(registerMessage, error.message);
         registerSubmitButton.disabled = false;
-        registerSubmitButton.textContent = 'Submit for review';
+        registerSubmitButton.textContent = 'Create account';
       }
     });
   }

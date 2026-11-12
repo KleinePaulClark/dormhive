@@ -2,7 +2,7 @@ import { query } from '../config/database.js';
 import crypto from 'node:crypto';
 
 // Return a computed `name` while exposing first_name and last_name when available
-const publicFields = "id, COALESCE(NULLIF(TRIM(CONCAT_WS(' ', first_name, last_name)), ''), name) AS name, first_name, last_name, email, phone, avatar_url, role, status, verification_status, archived_status, archived_at, last_login_at, last_active_at, created_at, updated_at";
+const publicFields = "id, COALESCE(NULLIF(TRIM(CONCAT_WS(' ', first_name, last_name)), ''), name) AS name, first_name, last_name, email, phone, avatar_url, role, status, verification_status, (verification_document_id IS NOT NULL) AS has_verification_document, archived_status, archived_at, last_login_at, last_active_at, created_at, updated_at";
 
 export async function findByEmail(email) {
   const rows = await query(`SELECT ${publicFields}, password_hash FROM users WHERE email = ? LIMIT 1`, [email]);
@@ -36,7 +36,15 @@ export async function create({ name, first_name, last_name, email, passwordHash,
 }
 
 export async function setVerificationDocument(id, documentId) {
-  await query('UPDATE users SET verification_document_id = ? WHERE id = ?', [documentId, id]);
+  const result = await query(
+    `UPDATE users
+     SET verification_document_id = ?, verification_status = 'pending', status = 'active'
+     WHERE id = ? AND verification_status IN ('pending', 'rejected')
+       AND status IN ('active', 'pending')
+       AND (verification_document_id IS NULL OR verification_status = 'rejected')`,
+    [documentId, id]
+  );
+  if (result.affectedRows !== 1) return null;
   return findById(id);
 }
 
@@ -52,12 +60,11 @@ export async function findVerificationDocument(id) {
 }
 
 export async function reviewVerification(id, verificationStatus) {
-  const nextStatus = verificationStatus === 'approved' ? 'active' : 'suspended';
   const result = await query(
     `UPDATE users
-     SET verification_status = ?, status = ?
+     SET verification_status = ?, status = 'active'
      WHERE id = ? AND verification_status = 'pending' AND verification_document_id IS NOT NULL`,
-    [verificationStatus, nextStatus, id]
+    [verificationStatus, id]
   );
   return result.affectedRows === 1;
 }
@@ -71,18 +78,25 @@ export async function list({ page, limit, search, archivedOnly = false, verifica
   const term = `%${search}%`;
   const archiveFilter = archivedOnly ? "status = 'archived'" : "status != 'archived'";
   const searchFilter = '(name LIKE ? OR email LIKE ?)';
-  const verificationFilter = verificationStatus ? ' AND verification_status = ?' : '';
+  const verificationFilter = verificationStatus
+    ? ` AND verification_status = ?${verificationStatus === 'pending' ? ' AND verification_document_id IS NOT NULL' : ''}`
+    : '';
   const filters = `${archiveFilter} AND ${searchFilter}${verificationFilter}`;
   const values = verificationStatus ? [term, term, verificationStatus] : [term, term];
   const rows = await query(`SELECT ${publicFields} FROM users WHERE ${filters} ORDER BY created_at DESC LIMIT ? OFFSET ?`, [...values, limit, offset]);
   const total = await query(`SELECT COUNT(*) AS count FROM users WHERE ${filters}`, values);
   const verificationCounts = await query(
-    `SELECT verification_status AS status, COUNT(*) AS count
-     FROM users WHERE ${archiveFilter} AND ${searchFilter} GROUP BY verification_status`,
+    `SELECT
+       SUM(verification_status = 'pending' AND verification_document_id IS NOT NULL) AS pending,
+       SUM(verification_status = 'approved') AS approved,
+       SUM(verification_status = 'rejected') AS rejected,
+       COUNT(*) AS all_users
+     FROM users WHERE ${archiveFilter} AND ${searchFilter}`,
     [term, term]
   );
-  const counts = { pending: 0, approved: 0, rejected: 0 };
-  verificationCounts.forEach(({ status, count }) => { counts[status] = Number(count); });
+  const counts = Object.fromEntries(
+    Object.entries(verificationCounts[0] ?? {}).map(([status, count]) => [status === 'all_users' ? 'all' : status, Number(count ?? 0)])
+  );
   return { rows, total: Number(total[0].count), counts };
 }
 

@@ -326,6 +326,33 @@ input {
   color: #9f1b1b;
 }
 
+.verification-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #cfe8dc;
+  border-radius: 14px;
+  background: #f7fbf9;
+}
+
+.verification-panel h2 {
+  margin: 0;
+  color: #1f2d2b;
+  font-size: 1rem;
+}
+
+.verification-status,
+.verification-panel small {
+  color: #52635c;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.verification-panel form[hidden] {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .tenant-page-main {
     align-items: flex-start;

@@ -8,12 +8,8 @@ import {
   findByEmail,
   recordLogin,
   revokePasswordResetToken,
-  remove,
-  setVerificationDocument,
   updatePassword
 } from '../models/User.js';
-import * as mediaFiles from '../models/Media.js';
-import { validateUpload } from '../utils/fileValidation.js';
 import { isEmailConfigured, sendPasswordResetEmail } from '../services/email.js';
 
 function tokenFor(user) {
@@ -103,8 +99,6 @@ export async function oauthCallback(request, response) {
     if (!user) {
       throw new Error('Create your account using the registration form and upload an ID for verification before signing in.');
     }
-    if (user.verification_status === 'pending') throw new Error('Your account is awaiting admin verification. We will email you when it has been reviewed.');
-    if (user.verification_status === 'rejected') throw new Error('Your account verification was rejected. Please check your email for details.');
     if (user.status !== 'active') throw new Error('This account is not active.');
     user = await recordLogin(user.id);
     return response.redirect(frontendCallback({ mode: state.mode, accessToken: tokenFor(user) }));
@@ -132,11 +126,6 @@ function isValidPhone(value) {
 export async function register(request, response, next) {
   try {
     const { first_name, last_name, name, email, password, role = 'tenant', phone } = request.body;
-    if (!request.file) return response.status(422).json({ message: 'Upload a clear photo or PDF of a government-issued or other valid ID.' });
-    const document = validateUpload(request.file);
-    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(document.mimeType)) {
-      return response.status(422).json({ message: 'ID documents must be a JPEG, PNG, WEBP, or PDF file.' });
-    }
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : phone;
     if (!['tenant', 'owner'].includes(role)) return response.status(422).json({ message: 'Role must be tenant or owner.' });
     if (!normalizedPhone || !isValidPhilippinePhoneNumber(normalizedPhone)) {
@@ -155,25 +144,13 @@ export async function register(request, response, next) {
       passwordHash: await bcrypt.hash(password, 12),
       phone: normalizedPhone ? String(normalizedPhone).trim() : null,
       role,
-      status: 'pending',
+      status: 'active',
       verificationStatus: 'pending'
     });
-    try {
-      const storedDocument = await mediaFiles.create({
-        uploadedBy: user.id,
-        filename: document.filename,
-        mimeType: document.mimeType,
-        buffer: request.file.buffer
-      });
-      const pendingUser = await setVerificationDocument(user.id, storedDocument.id);
-      response.status(201).json({
-        user: pendingUser,
-        message: 'Your account is submitted for verification. You can sign in after an admin reviews your ID. We will email you with the decision.'
-      });
-    } catch (error) {
-      await remove(user.id);
-      throw error;
-    }
+    response.status(201).json({
+      user,
+      message: 'Your account was created. Sign in, then upload a valid ID in your profile to verify your account.'
+    });
   } catch (error) { next(error); }
 }
 
@@ -185,16 +162,12 @@ export function loginRejection(user, passwordMatches) {
       message: 'This account has been archived and can’t sign in. Contact DormHive support if you think this is a mistake.'
     };
   }
-  if (user.verification_status === 'pending' || user.status === 'pending') {
-    return { status: 403, message: 'Your account is awaiting admin verification. We will email you when it has been reviewed.' };
-  }
-  if (user.verification_status === 'rejected') {
-    return { status: 403, message: 'Your account verification was rejected. Please check your email for details or contact DormHive support.' };
-  }
   if (user.status === 'suspended') {
     return { status: 403, message: 'Your account has been suspended. Please contact the administrator for assistance.' };
   }
-  if (user.status !== 'active') return { status: 401, message: 'Invalid email or password.' };
+  if (user.status !== 'active' && !(user.status === 'pending' && user.verification_status === 'pending')) {
+    return { status: 401, message: 'Invalid email or password.' };
+  }
   return null;
 }
 

@@ -74,6 +74,49 @@ export async function verificationDocument(request, response, next) {
   } catch (error) { next(error); }
 }
 
+export async function submitVerificationDocument(request, response, next) {
+  try {
+    if (request.user.id !== Number(request.params.id)) return response.status(403).json({ message: 'Permission denied.' });
+    if (!request.file) return response.status(422).json({ message: 'Upload a clear photo or PDF of a government-issued or other valid ID.' });
+    const target = await users.findById(request.params.id);
+    if (!target) return response.status(404).json({ message: 'User not found.' });
+    if (target.status === 'archived') return response.status(409).json({ message: 'Archived accounts cannot be verified.' });
+    if (target.status === 'suspended') return response.status(403).json({ message: 'Suspended accounts cannot submit verification documents. Contact support.' });
+    if (target.verification_status === 'approved') return response.status(409).json({ message: 'This account is already verified.' });
+
+    const document = validateUpload(request.file);
+    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(document.mimeType)) {
+      return response.status(422).json({ message: 'ID documents must be a JPEG, PNG, WEBP, or PDF file.' });
+    }
+    const storedDocument = await mediaFiles.create({
+      uploadedBy: target.id,
+      isPrivate: true,
+      filename: document.filename,
+      mimeType: document.mimeType,
+      buffer: request.file.buffer
+    });
+    let updated;
+    try {
+      updated = await users.setVerificationDocument(target.id, storedDocument.id);
+    } catch (error) {
+      try {
+        await mediaFiles.remove(storedDocument.id);
+      } catch (cleanupError) {
+        console.error('Unable to remove an unlinked verification document.', cleanupError.message);
+      }
+      throw error;
+    }
+    if (!updated) {
+      await mediaFiles.remove(storedDocument.id);
+      return response.status(409).json({ message: 'A verification document is already awaiting review. Contact support if you need to replace it.' });
+    }
+    return response.status(201).json({
+      data: updated,
+      message: 'Your ID was submitted for admin review.'
+    });
+  } catch (error) { next(error); }
+}
+
 export async function reviewVerification(request, response, next) {
   try {
     const verificationStatus = String(request.body.status ?? '').toLowerCase();
